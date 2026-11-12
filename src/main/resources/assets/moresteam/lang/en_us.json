@@ -1,0 +1,11 @@
+{
+  "moresteam.configuration.title": "More Steam",
+  "moresteam.configuration.section.moresteam.client.toml": "Client settings",
+  "moresteam.configuration.section.moresteam.client.toml.title": "More Steam client settings",
+  "moresteam.configuration.steamDurationMultiplier": "Stop steam duration multiplier",
+  "moresteam.configuration.steamDurationMultiplier.tooltip": "How much longer bogeys release steam after a train stops. 1.0 is Create's own duration.",
+  "moresteam.configuration.idleSteam": "Idle steam",
+  "moresteam.configuration.idleSteam.tooltip": "Whether the bogeys of a standing train keep letting off small puffs of steam.",
+  "moresteam.configuration.idleSteamInterval": "Idle steam interval",
+  "moresteam.configuration.idleSteamInterval.tooltip": "Average number of ticks between idle puffs, per bogey. Lower means more steam."
+}

@@ -15,5 +15,6 @@ public final class ClientParticleEvents {
 	@SubscribeEvent
 	public static void registerParticleProvider(RegisterParticleProvidersEvent event) {
 		event.registerSpriteSet(MoreSteamParticles.BOGEY_STEAM.get(), BogeySteamParticle.Provider::new);
+		event.registerSpriteSet(MoreSteamParticles.BOGEY_IDLE_STEAM.get(), BogeySteamParticle.IdleProvider::new);
 	}
 }
