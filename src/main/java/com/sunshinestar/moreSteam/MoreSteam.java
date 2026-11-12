@@ -14,6 +14,7 @@ public final class MoreSteam {
 
 	public MoreSteam(IEventBus modEventBus, ModContainer modContainer) {
 		MoreSteamParticles.PARTICLE_TYPES.register(modEventBus);
+		MoreSteamBlocks.register(modEventBus);
 		modContainer.registerConfig(ModConfig.Type.CLIENT, MoreSteamConfig.SPEC);
 	}
 }

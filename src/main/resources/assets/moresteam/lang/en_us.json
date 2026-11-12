@@ -7,5 +7,6 @@
   "moresteam.configuration.idleSteam": "Idle steam",
   "moresteam.configuration.idleSteam.tooltip": "Whether the bogeys of a standing train keep letting off small puffs of steam.",
   "moresteam.configuration.idleSteamInterval": "Idle steam interval",
-  "moresteam.configuration.idleSteamInterval.tooltip": "Average number of ticks between idle puffs, per bogey. Lower means more steam."
+  "moresteam.configuration.idleSteamInterval.tooltip": "Average number of ticks between idle puffs, per bogey. Lower means more steam.",
+  "block.moresteam.firebox": "Firebox"
 }
