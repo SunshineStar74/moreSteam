@@ -2,9 +2,12 @@
   "required": true,
   "minVersion": "0.8",
   "package": "com.sunshinestar.moreSteam.mixin",
-  "compatibilityLevel": "JAVA_17",
-  "refmap": "moresteam.refmap.json",
+  "compatibilityLevel": "JAVA_21",
   "client": [
+    "CarriageBogeyAccessor",
     "CarriageParticlesMixin"
-  ]
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
 }
