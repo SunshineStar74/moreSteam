@@ -27,6 +27,16 @@ public final class MoreSteamConfig {
 		.translation("moresteam.configuration.idleSteamInterval")
 		.defineInRange("idleSteamInterval", 8, 1, 200);
 
+	public static final ModConfigSpec.DoubleValue STEAM_AXLE_BASE = BUILDER
+		.comment("How much more steam a bogey lets off for every axle beyond two: amount = base ^ (axles - 2).",
+			"1.0 gives every bogey the same amount; 2.0 doubles it with every axle.",
+			"WARNING: this grows very fast. At 2.0 a six-axle bogey already lets off 16 times as much",
+			"steam as a two-axle one, and at 3.0 it is 81 times as much - thousands of particles per",
+			"bogey, which can bury a train in white and drop the frame rate to a crawl. Lower it if",
+			"long bogeys cause lag, and raise it only in small steps.")
+		.translation("moresteam.configuration.steamAxleBase")
+		.defineInRange("steamAxleBase", 2.0, 1.0, 3.0);
+
 	public static final ModConfigSpec SPEC = BUILDER.build();
 
 	private MoreSteamConfig() {}

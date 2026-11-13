@@ -27,6 +27,10 @@ neoForge {
         client {
             client()
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            // gradlew runClient "-PquickPlayWorld=<save folder>" opens that world right away.
+            if (project.hasProperty('quickPlayWorld')) {
+                programArguments.addAll('--quickPlaySingleplayer', project.property('quickPlayWorld').toString())
+            }
         }
 
         server {

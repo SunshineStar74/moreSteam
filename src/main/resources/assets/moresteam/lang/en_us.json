@@ -8,5 +8,7 @@
   "moresteam.configuration.idleSteam.tooltip": "Whether the bogeys of a standing train keep letting off small puffs of steam.",
   "moresteam.configuration.idleSteamInterval": "Idle steam interval",
   "moresteam.configuration.idleSteamInterval.tooltip": "Average number of ticks between idle puffs, per bogey. Lower means more steam.",
+  "moresteam.configuration.steamAxleBase": "Steam per axle (exponent base)",
+  "moresteam.configuration.steamAxleBase.tooltip": "Amount of steam = base ^ (axles - 2). WARNING: grows very fast. At 2.0 a six-axle bogey lets off 16 times as much steam, at 3.0 it is 81 times as much, which can bury a train in white and wreck the frame rate.",
   "block.moresteam.firebox": "Firebox"
 }
