@@ -2,7 +2,6 @@ package com.sunshinestar.moreSteam;
 
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTabs;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.neoforged.bus.api.IEventBus;
@@ -15,7 +14,7 @@ public final class MoreSteamBlocks {
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(MoreSteam.MOD_ID);
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(MoreSteam.MOD_ID);
 
-    public static final DeferredBlock<Block> FIREBOX = BLOCKS.registerSimpleBlock("firebox",
+    public static final DeferredBlock<FireboxBlock> FIREBOX = BLOCKS.registerBlock("firebox", FireboxBlock::new,
         BlockBehaviour.Properties.of().strength(3.5f).requiresCorrectToolForDrops()
             .sound(SoundType.METAL).noOcclusion()); // noOcclusion: needed if the model isn't a full cube
     public static final DeferredItem<BlockItem> FIREBOX_ITEM = ITEMS.registerSimpleBlockItem(FIREBOX);
