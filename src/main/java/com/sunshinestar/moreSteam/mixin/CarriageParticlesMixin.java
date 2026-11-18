@@ -1,14 +1,21 @@
 package com.sunshinestar.moreSteam.mixin;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import com.llamalad7.mixinextras.injector.v2.WrapWithCondition;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.simibubi.create.content.trains.bogey.BogeyStyle;
 import com.simibubi.create.content.trains.entity.Carriage;
 import com.simibubi.create.content.trains.entity.CarriageBogey;
+import com.simibubi.create.content.trains.entity.CarriageContraption;
 import com.simibubi.create.content.trains.entity.CarriageContraptionEntity;
 import com.simibubi.create.content.trains.entity.CarriageParticles;
 import com.sunshinestar.moreSteam.BogeyTraits;
+import com.sunshinestar.moreSteam.MoreSteamBlocks;
 import com.sunshinestar.moreSteam.MoreSteamConfig;
+import com.sunshinestar.moreSteam.Pistons;
 import com.sunshinestar.moreSteam.particle.MoreSteamParticles;
 import com.sunshinestar.moreSteam.particle.SteamBurst;
 
@@ -17,6 +24,7 @@ import net.minecraft.core.Direction.Axis;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.phys.Vec3;
 
 import org.objectweb.asm.Opcodes;
@@ -84,26 +92,39 @@ public abstract class CarriageParticlesMixin {
 	}
 
 	/**
-	 * Adds the bursts of steam that shoot towards the back of the train: a strong one on every bogey
-	 * while Create releases its own stop steam, and a weak one every now and then while standing.
+	 * Per cylinder (two bogeys, up to two cylinders each): ticks left to wait before the next idle
+	 * burst while positive, ticks left of the running burst while negative. 0 means not started.
+	 */
+	@Unique private final int[] moresteam$idleTimers = new int[4];
+	/** Whether the carriage carries a firebox; looked up once, since a carriage cannot change. */
+	@Unique private Boolean moresteam$hasFirebox;
+
+	/**
+	 * Adds the bursts of steam that shoot from the cylinders towards the back of the train, on
+	 * carriages with a firebox: a strong one from every cylinder while Create releases its own stop
+	 * steam, and a weaker one from each cylinder every so often while standing.
 	 */
 	@Inject(method = "tick", at = @At("TAIL"))
 	private void moresteam$steamBursts(Carriage.DimensionalCarriageEntity dce, CallbackInfo ci) {
 		// prevMotion already holds this tick's motion.
-		if (!this.arrived || this.prevMotion >= 0.002)
-			return;
+		boolean standing = this.arrived && this.prevMotion < 0.002;
 		// Same window in which Create itself releases steam (its "!spark" case).
-		boolean stopping = this.depressurise > 0 && this.depressurise <= MoreSteamConfig.steamTicks();
-		boolean idle = this.depressurise == 0 && MoreSteamConfig.IDLE_STEAM.get();
+		boolean stopping = standing && this.depressurise > 0 && this.depressurise <= MoreSteamConfig.steamTicks()
+			&& moresteam$hasFirebox();
+		boolean idle = standing && this.depressurise == 0 && MoreSteamConfig.IDLE_STEAM.get() && moresteam$hasFirebox();
+		if (!idle)
+			Arrays.fill(this.moresteam$idleTimers, 0);
 		if (!stopping && !idle)
 			return;
 
 		Level level = this.entity.level();
 		RandomSource random = level.random;
-		int interval = MoreSteamConfig.IDLE_STEAM_INTERVAL.get();
 		Vec3 trainBack = moresteam$trainBack();
 
-		for (CarriageBogey bogey : this.entity.getCarriage().bogeys) {
+		List<CarriageBogey> bogeys = new ArrayList<>(2);
+		this.entity.getCarriage().bogeys.forEach(bogeys::add);
+		for (int b = 0; b < bogeys.size(); b++) {
+			CarriageBogey bogey = bogeys.get(b);
 			if (bogey == null)
 				continue;
 			if (BogeyTraits.isSilent(bogey.getStyle()))
@@ -113,26 +134,61 @@ public abstract class CarriageParticlesMixin {
 			Vec3 back = moresteam$bogeyRotate(bogey, new Vec3(0, 0, 1));
 			int backSign = back.dot(trainBack) >= 0 ? 1 : -1;
 			back = back.scale(backSign);
-
-			// Both sides always let off steam together.
-			if (idle && random.nextInt(interval) != 0)
-				continue;
-
-			double halfWidth = BogeyTraits.halfWidth(bogey);
 			float scale = BogeyTraits.steamScale(bogey);
-			// Create's particle origin sits 0.6 above the rail; aim just below the axle line of the wheels.
-			double height = -0.6 + bogey.getSize().wheelRadius() - 0.1;
 
-			for (int side = -1; side <= 1; side += 2) {
-				// Low on the side of the bogey, at its front end, so the jet runs back along the wheels.
-				Vec3 pos = moresteam$bogeyToWorld(bogey, new Vec3(side * halfWidth, height, -backSign * 0.9));
-				Vec3 out = moresteam$bogeyRotate(bogey, new Vec3(side, 0, 0));
-				if (stopping)
-					SteamBurst.emit(level, random, pos, back, out, Vec3.ZERO, 2, 0.52, MoreSteamParticles.BOGEY_STEAM.get(), scale);
-				else
-					SteamBurst.emit(level, random, pos, back, out, Vec3.ZERO, 1, 0.26, MoreSteamParticles.BOGEY_IDLE_STEAM.get(), scale);
+			// Only cylinders let off steam; both sides of a cylinder blow together. While stopping
+			// every cylinder blows at once; while idle each one keeps its own clock.
+			List<Pistons.Piston> pistons = Pistons.of(bogey);
+			for (int p = 0; p < pistons.size() && p < 2; p++) {
+				if (idle && !moresteam$tickIdleTimer(b * 2 + p, random))
+					continue;
+				Pistons.Piston piston = pistons.get(p);
+				for (int side = -1; side <= 1; side += 2) {
+					Vec3 pos = moresteam$bogeyToWorld(bogey, piston.offset(side));
+					Vec3 out = moresteam$bogeyRotate(bogey, new Vec3(side, 0, 0));
+					if (stopping && piston.small())
+						SteamBurst.emit(level, random, pos, back, out, Vec3.ZERO, 2, 0.4, null, scale * 0.5f);
+					else if (stopping)
+						SteamBurst.emit(level, random, pos, back, out, Vec3.ZERO, 2, 0.52, MoreSteamParticles.BOGEY_STEAM.get(), scale);
+					else if (piston.small())
+						SteamBurst.emit(level, random, pos, back, out, Vec3.ZERO, 1, 0.2, null, scale * 0.5f);
+					else
+						SteamBurst.emit(level, random, pos, back, out, Vec3.ZERO, 1, 0.26, MoreSteamParticles.BOGEY_IDLE_STEAM.get(), scale);
+				}
 			}
 		}
+	}
+
+	/** Advances one cylinder's idle clock by a tick and says whether it is blowing steam this tick. */
+	@Unique
+	private boolean moresteam$tickIdleTimer(int index, RandomSource random) {
+		int timer = this.moresteam$idleTimers[index];
+		if (timer == 0) {
+			// Just stood still: wait first.
+			this.moresteam$idleTimers[index] = MoreSteamConfig.idleWaitTicks(random);
+			return false;
+		}
+		if (timer > 0) {
+			this.moresteam$idleTimers[index] = timer == 1 ? -MoreSteamConfig.idleBurstTicks() : timer - 1;
+			return false;
+		}
+		// Bursting; when the burst is over, wait again.
+		this.moresteam$idleTimers[index] = timer == -1 ? MoreSteamConfig.idleWaitTicks(random) : timer + 1;
+		return true;
+	}
+
+	/** Whether any block of this carriage is a firebox. */
+	@Unique
+	private boolean moresteam$hasFirebox() {
+		if (this.moresteam$hasFirebox == null) {
+			CarriageContraption contraption = this.entity.getContraption() instanceof CarriageContraption c ? c : null;
+			if (contraption == null)
+				return false; // not synced yet; ask again next tick
+			Block firebox = MoreSteamBlocks.FIREBOX.get();
+			this.moresteam$hasFirebox = contraption.getBlocks().values().stream()
+				.anyMatch(info -> info.state().is(firebox));
+		}
+		return this.moresteam$hasFirebox;
 	}
 
 	/**

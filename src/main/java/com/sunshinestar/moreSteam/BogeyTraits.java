@@ -62,12 +62,18 @@ public final class BogeyTraits {
 		};
 		// With the default base of 2: one axle 0.5, two 1, three 2, six 16.
 		float axles = (float) Math.pow(MoreSteamConfig.STEAM_AXLE_BASE.get(), axles(bogey) - 2);
+		// Comically Large counts as six axles, but gets half of that so it does not drown in steam.
+		if (isComicallyLarge(bogey))
+			axles *= 0.5f;
 		return gauge * axles;
 	}
 
 	/** Number of axles, read from the name of the style; styles that do not say are taken as ordinary. */
 	public static int axles(CarriageBogey bogey) {
 		String path = bogey.getStyle().id.getPath();
+		// One giant axle, but it gets as much steam as the biggest bogeys.
+		if (isComicallyLarge(bogey))
+			return 6;
 
 		Matcher matcher = WHEEL_ARRANGEMENT.matcher(path);
 		if (matcher.find()) {
@@ -82,6 +88,11 @@ public final class BogeyTraits {
 
 		// Create's own large bogey is a single pair of big wheels, its small one two pairs.
 		return bogey.getSize().wheelRadius() > 0.6f ? 1 : 2;
+	}
+
+	private static boolean isComicallyLarge(CarriageBogey bogey) {
+		return RAILWAYS.equals(bogey.getStyle().id.getNamespace())
+			&& "wide_comically_large".equals(bogey.getStyle().id.getPath());
 	}
 
 	private static String gauge(CarriageBogey bogey) {

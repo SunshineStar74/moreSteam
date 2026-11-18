@@ -5,10 +5,14 @@
   "moresteam.configuration.steamDurationMultiplier": "Stop steam duration multiplier",
   "moresteam.configuration.steamDurationMultiplier.tooltip": "How much longer bogeys release steam after a train stops. 1.0 is Create's own duration.",
   "moresteam.configuration.idleSteam": "Idle steam",
-  "moresteam.configuration.idleSteam.tooltip": "Whether the bogeys of a standing train keep letting off small puffs of steam.",
-  "moresteam.configuration.idleSteamInterval": "Idle steam interval",
-  "moresteam.configuration.idleSteamInterval.tooltip": "Average number of ticks between idle puffs, per bogey. Lower means more steam.",
+  "moresteam.configuration.idleSteam.tooltip": "Whether the cylinders of a standing train with a firebox let off a burst of steam every now and then.",
+  "moresteam.configuration.idleIntervalMin": "Idle burst wait, minimum (s)",
+  "moresteam.configuration.idleIntervalMin.tooltip": "Shortest wait before a standing train's cylinder lets off a burst.",
+  "moresteam.configuration.idleIntervalMax": "Idle burst wait, maximum (s)",
+  "moresteam.configuration.idleIntervalMax.tooltip": "Longest wait before a standing train's cylinder lets off a burst.",
+  "moresteam.configuration.idleBurstLength": "Idle burst length (s)",
+  "moresteam.configuration.idleBurstLength.tooltip": "How long each burst of a standing train lasts.",
   "moresteam.configuration.steamAxleBase": "Steam per axle (exponent base)",
-  "moresteam.configuration.steamAxleBase.tooltip": "Amount of steam = base ^ (axles - 2). WARNING: grows very fast. At 2.0 a six-axle bogey lets off 16 times as much steam, at 3.0 it is 81 times as much, which can bury a train in white and wreck the frame rate.",
+  "moresteam.configuration.steamAxleBase.tooltip": "Steam = base ^ (axles - 2). WARNING: at 3.0 a six-axle bogey makes 81x the steam and can wreck the frame rate.",
   "block.moresteam.firebox": "Firebox"
 }

@@ -17,15 +17,26 @@ public final class MoreSteamConfig {
 		.defineInRange("steamDurationMultiplier", 3.0, 1.0, 20.0);
 
 	public static final ModConfigSpec.BooleanValue IDLE_STEAM = BUILDER
-		.comment("Whether the bogeys of a standing train keep letting off small puffs of steam.")
+		.comment("Whether the cylinders of a standing train with a firebox let off a burst of steam every now and then.")
 		.translation("moresteam.configuration.idleSteam")
 		.define("idleSteam", true);
 
-	public static final ModConfigSpec.IntValue IDLE_STEAM_INTERVAL = BUILDER
-		.comment("Average number of ticks between idle puffs, per bogey. Lower means more steam.",
-			"20 ticks are one second.")
-		.translation("moresteam.configuration.idleSteamInterval")
-		.defineInRange("idleSteamInterval", 8, 1, 200);
+	public static final ModConfigSpec.DoubleValue IDLE_INTERVAL_MIN = BUILDER
+		.comment("Shortest wait, in seconds, before a standing train's cylinder lets off a burst. Each cylinder",
+			"picks a new wait between the minimum and the maximum every time.")
+		.translation("moresteam.configuration.idleIntervalMin")
+		.defineInRange("idleIntervalMin", 10.0, 1.0, 120.0);
+
+	public static final ModConfigSpec.DoubleValue IDLE_INTERVAL_MAX = BUILDER
+		.comment("Longest wait, in seconds, before a standing train's cylinder lets off a burst.",
+			"If it is set below the minimum, the minimum is used.")
+		.translation("moresteam.configuration.idleIntervalMax")
+		.defineInRange("idleIntervalMax", 15.0, 1.0, 120.0);
+
+	public static final ModConfigSpec.DoubleValue IDLE_BURST_LENGTH = BUILDER
+		.comment("How long, in seconds, each burst of a standing train lasts.")
+		.translation("moresteam.configuration.idleBurstLength")
+		.defineInRange("idleBurstLength", 5.0, 0.5, 30.0);
 
 	public static final ModConfigSpec.DoubleValue STEAM_AXLE_BASE = BUILDER
 		.comment("How much more steam a bogey lets off for every axle beyond two: amount = base ^ (axles - 2).",
@@ -44,6 +55,18 @@ public final class MoreSteamConfig {
 	/** Length of the stop-steam phase in ticks, replacing Create's fixed 10. */
 	public static int steamTicks() {
 		return scaleSteamTicks(VANILLA_STEAM_TICKS);
+	}
+
+	/** A fresh random wait in ticks before the next idle burst. */
+	public static int idleWaitTicks(net.minecraft.util.RandomSource random) {
+		double min = IDLE_INTERVAL_MIN.get();
+		double max = Math.max(min, IDLE_INTERVAL_MAX.get());
+		return (int) Math.round(20 * (min + random.nextDouble() * (max - min)));
+	}
+
+	/** Length of an idle burst in ticks. */
+	public static int idleBurstTicks() {
+		return Math.max(1, (int) Math.round(20 * IDLE_BURST_LENGTH.get()));
 	}
 
 	/** Stretches a number of steam ticks by the configured multiplier. */
