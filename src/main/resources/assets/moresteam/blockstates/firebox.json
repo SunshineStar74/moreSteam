@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "moresteam:block/firebox" },
+    "facing=east": { "model": "moresteam:block/firebox", "y": 90 },
+    "facing=south": { "model": "moresteam:block/firebox", "y": 180 },
+    "facing=west": { "model": "moresteam:block/firebox", "y": 270 }
+  }
+}

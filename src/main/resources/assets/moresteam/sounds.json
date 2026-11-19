@@ -1,0 +1,29 @@
+{
+  "bogey.idle_burst": {
+    "subtitle": "subtitles.moresteam.bogey.idle_burst",
+    "sounds": [
+      "moresteam:steam/3_sec_burst",
+      "moresteam:steam/5_sec_burst2",
+      "moresteam:steam/5_sec_burst3",
+      "moresteam:steam/5_sec_burst4"
+    ]
+  },
+  "bogey.stop_burst": {
+    "subtitle": "subtitles.moresteam.bogey.stop_burst",
+    "sounds": [
+      "moresteam:steam/10_sec_burst"
+    ]
+  },
+  "bogey.departure": {
+    "subtitle": "subtitles.moresteam.bogey.departure",
+    "sounds": [
+      "moresteam:steam/pressure_release"
+    ]
+  },
+  "bogey.pull_away_burst": {
+    "subtitle": "subtitles.moresteam.bogey.pull_away_burst",
+    "sounds": [
+      "moresteam:steam/1_sec_no_loop_burst"
+    ]
+  }
+}

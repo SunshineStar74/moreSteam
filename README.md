@@ -1,8 +1,6 @@
 # More Steam
 More Steam is a Create addon that makes train bogeys blow off steam: from the cylinders of piston bogeys when a train stops, stands, or pulls away, with sound.
 
-> **Note:** the code on this `main` branch is the original Forge 1.20.1 version. The current mod is on the [`Steam-1.21.1`](https://github.com/SunshineStar74/moreSteam/tree/Steam-1.21.1) branch; this README describes that version.
-
 ## Download
 Get the jar from the [Releases](https://github.com/SunshineStar74/moreSteam/releases) page. The latest release, **v.1.4.6**, is for Minecraft 1.21.1 with NeoForge and Create 6.0.10.
 
@@ -59,12 +57,13 @@ Settings are in `config/moresteam-client.toml`, or in-game under Mods > More Ste
 ## Branches
 | Branch | Contents |
 |---|---|
-| `Steam-1.21.1` | NeoForge 1.21.1 / Create 6.0.10. Maintained; releases are built from here. |
+| `main` | NeoForge 1.21.1 / Create 6.0.10. The latest released code; releases are built from here. |
 | `Steam-1.20.1` | Forge 1.20.1 / Create 6.0.8. Not maintained. |
-| `main` | The original Forge 1.20.1 code. |
+
+New work happens on short-lived branches off `main` and is merged back through a pull request once it has been tested.
 
 ## Building
-On the `Steam-1.21.1` branch. Needs a JDK 21; Gradle finds an installed one, or downloads it.
+On the `main` branch. Needs a JDK 21; Gradle finds an installed one, or downloads it.
 
 ```
 ./gradlew build
