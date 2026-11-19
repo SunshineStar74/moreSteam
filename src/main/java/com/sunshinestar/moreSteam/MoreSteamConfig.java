@@ -16,10 +16,30 @@ public final class MoreSteamConfig {
 		.translation("moresteam.configuration.steamDurationMultiplier")
 		.defineInRange("steamDurationMultiplier", 3.0, 1.0, 20.0);
 
+	public static final ModConfigSpec.DoubleValue STOP_BURST_LENGTH = BUILDER
+		.comment("Longest time, in seconds, the cylinders of a train with a firebox blow steam backwards after it",
+			"stops. A train that travelled 100+ blocks and braked from full speed gets the whole length; shorter",
+			"or slower trips get less, down to 1.5 s. Create's own small downward puffs keep their own length",
+			"(see steamDurationMultiplier).")
+		.translation("moresteam.configuration.stopBurstLength")
+		.defineInRange("stopBurstLength", 5.0, 0.5, 30.0);
+
+	public static final ModConfigSpec.DoubleValue STOP_PRESSURE_CURVE = BUILDER
+		.comment("How much less steam slow or short trips give when the train stops. The stop's pressure P (0 to 1)",
+			"becomes (base ^ P - 1) / (base - 1). 1.0 is a straight line; at 4.0 half pressure gives a third.")
+		.translation("moresteam.configuration.stopPressureCurve")
+		.defineInRange("stopPressureCurve", 4.0, 1.0, 16.0);
+
 	public static final ModConfigSpec.BooleanValue IDLE_STEAM = BUILDER
 		.comment("Whether the cylinders of a standing train with a firebox let off a burst of steam every now and then.")
 		.translation("moresteam.configuration.idleSteam")
 		.define("idleSteam", true);
+
+	public static final ModConfigSpec.DoubleValue IDLE_DELAY_AFTER_STOP = BUILDER
+		.comment("How long, in seconds, a train stays quiet after its stop hiss has died away before idle steam",
+			"starts.")
+		.translation("moresteam.configuration.idleDelayAfterStop")
+		.defineInRange("idleDelayAfterStop", 20.0, 0.0, 120.0);
 
 	public static final ModConfigSpec.DoubleValue IDLE_INTERVAL_MIN = BUILDER
 		.comment("Shortest wait, in seconds, before a standing train's cylinder lets off a burst. Each cylinder",
@@ -88,6 +108,34 @@ public final class MoreSteamConfig {
 	/** Length of the stop-steam phase in ticks, replacing Create's fixed 10. */
 	public static int steamTicks() {
 		return scaleSteamTicks(VANILLA_STEAM_TICKS);
+	}
+
+	/**
+	 * Length of the stop burst in ticks for a stop of the given pressure (0..1): from 1.5 s, the
+	 * length of Create's own stretched stop steam, up to the configured length at full pressure.
+	 */
+	public static int stopBurstTicks(float pressure) {
+		double max = STOP_BURST_LENGTH.get();
+		double min = Math.min(1.5, max);
+		return Math.max(1, (int) Math.round(20 * (min + (max - min) * pressure)));
+	}
+
+	/** Bends a stop's pressure (0..1) down so that low pressures count for less. */
+	public static float curvePressure(float pressure) {
+		double base = STOP_PRESSURE_CURVE.get();
+		if (base < 1.0001)
+			return pressure;
+		return (float) ((Math.pow(base, pressure) - 1) / (base - 1));
+	}
+
+	/** Quiet time in ticks between the stop hiss dying away and idle steam. */
+	public static int idleDelayAfterStopTicks() {
+		return (int) Math.round(20 * IDLE_DELAY_AFTER_STOP.get());
+	}
+
+	/** Spread in ticks between the shortest and longest idle wait. */
+	public static int idleSpreadTicks() {
+		return (int) Math.round(20 * Math.max(0, IDLE_INTERVAL_MAX.get() - IDLE_INTERVAL_MIN.get()));
 	}
 
 	/** A fresh random wait in ticks before the next idle burst. */

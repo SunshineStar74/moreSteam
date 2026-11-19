@@ -24,6 +24,8 @@ public final class BurstSound extends AbstractTickableSoundInstance {
 	private static final float TAIL_VOLUME = 0.5f;
 	/** How long the fade down to the tail volume takes. */
 	private static final int FADE_TICKS = 10;
+	/** How long the final fade-out after the tail takes. */
+	private static final int OUT_TICKS = 20;
 
 	private final Entity carriage;
 	/** Where the sound sits relative to the carriage's position. */
@@ -31,10 +33,17 @@ public final class BurstSound extends AbstractTickableSoundInstance {
 	private final float fullVolume;
 	/** Ticks at full volume before fading to the tail, or -1 to stay at full volume. */
 	private final int loudTicks;
+	/** Ticks the tail lasts before the sound fades out completely, or -1 to play the file to its end. */
+	private final int tailTicks;
 	private int age;
 
 	public BurstSound(SoundEvent sound, Entity carriage, Vec3 pos, float volume, float pitch, int loudTicks,
 		RandomSource random) {
+		this(sound, carriage, pos, volume, pitch, loudTicks, -1, random);
+	}
+
+	public BurstSound(SoundEvent sound, Entity carriage, Vec3 pos, float volume, float pitch, int loudTicks,
+		int tailTicks, RandomSource random) {
 		super(sound, SoundSource.NEUTRAL, random);
 		this.carriage = carriage;
 		this.offset = pos.subtract(carriage.position());
@@ -45,6 +54,7 @@ public final class BurstSound extends AbstractTickableSoundInstance {
 		this.pitch = pitch;
 		this.fullVolume = volume;
 		this.loudTicks = loudTicks;
+		this.tailTicks = tailTicks;
 		this.attenuation = SoundInstance.Attenuation.LINEAR;
 	}
 
@@ -77,6 +87,14 @@ public final class BurstSound extends AbstractTickableSoundInstance {
 		if (this.loudTicks >= 0) {
 			float fade = Mth.clamp((this.age - this.loudTicks) / (float) FADE_TICKS, 0f, 1f);
 			this.volume = this.fullVolume * Mth.lerp(fade, 1f, TAIL_VOLUME);
+			if (this.tailTicks >= 0) {
+				// After the tail, fade out completely over a second and stop.
+				int tailEnd = this.loudTicks + FADE_TICKS + this.tailTicks;
+				float out = Mth.clamp((this.age - tailEnd) / (float) OUT_TICKS, 0f, 1f);
+				this.volume *= 1 - out;
+				if (out >= 1)
+					stop();
+			}
 		}
 	}
 }
