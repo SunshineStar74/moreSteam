@@ -6,6 +6,7 @@
   "client": [
     "CarriageBogeyAccessor",
     "CarriageParticlesMixin",
+    "ConnectedTextureBehaviourMixin",
     "LabeledEntryAccessor",
     "SubMenuConfigScreenMixin"
   ],
