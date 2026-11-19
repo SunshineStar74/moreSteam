@@ -57,12 +57,13 @@ Settings are in `config/moresteam-client.toml`, or in-game under Mods > More Ste
 ## Branches
 | Branch | Contents |
 |---|---|
-| `Steam-1.21.1` | NeoForge 1.21.1 / Create 6.0.10. Maintained; releases are built from here. |
+| `main` | NeoForge 1.21.1 / Create 6.0.10. The latest released code; releases are built from here. |
 | `Steam-1.20.1` | Forge 1.20.1 / Create 6.0.8. Not maintained. |
-| `main` | The original Forge 1.20.1 code. |
+
+New work happens on short-lived branches off `main` and is merged back through a pull request once it has been tested.
 
 ## Building
-On the `Steam-1.21.1` branch. Needs a JDK 21; Gradle finds an installed one, or downloads it.
+On the `main` branch. Needs a JDK 21; Gradle finds an installed one, or downloads it.
 
 ```
 ./gradlew build
