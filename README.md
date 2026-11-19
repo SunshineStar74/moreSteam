@@ -1,6 +1,8 @@
 # More Steam
 More Steam is a Create addon that makes train bogeys blow off steam: from the cylinders of piston bogeys when a train stops, stands, or pulls away, with sound.
 
+> **Disclaimer:** all of the code in this mod is vibe-coded: written by AI, steered, tested and approved by me. The assets (textures, models and sounds) are not AI-made.
+
 ## Download
 Get the jar from the [Releases](https://github.com/SunshineStar74/moreSteam/releases) page. The latest release, **v.1.4.6**, is for Minecraft 1.21.1 with NeoForge and Create 6.0.10.
 
