@@ -38,6 +38,39 @@ public final class MoreSteamConfig {
 		.translation("moresteam.configuration.idleBurstLength")
 		.defineInRange("idleBurstLength", 5.0, 0.5, 30.0);
 
+	public static final ModConfigSpec.BooleanValue PULL_AWAY_STEAM = BUILDER
+		.comment("Whether the cylinders of a train with a firebox let off bursts as it pulls away from a standstill.")
+		.translation("moresteam.configuration.pullAwaySteam")
+		.define("pullAwaySteam", true);
+
+	public static final ModConfigSpec.DoubleValue PULL_AWAY_INTERVAL_MIN = BUILDER
+		.comment("Shortest wait, in seconds, between the bursts of a cylinder while the train pulls away.")
+		.translation("moresteam.configuration.pullAwayIntervalMin")
+		.defineInRange("pullAwayIntervalMin", 4.0, 0.5, 60.0);
+
+	public static final ModConfigSpec.DoubleValue PULL_AWAY_INTERVAL_MAX = BUILDER
+		.comment("Longest wait, in seconds, between the bursts of a cylinder while the train pulls away.",
+			"If it is set below the minimum, the minimum is used.")
+		.translation("moresteam.configuration.pullAwayIntervalMax")
+		.defineInRange("pullAwayIntervalMax", 7.0, 0.5, 60.0);
+
+	public static final ModConfigSpec.DoubleValue PULL_AWAY_BURST_LENGTH = BUILDER
+		.comment("How long, in seconds, each burst lasts while the train pulls away.")
+		.translation("moresteam.configuration.pullAwayBurstLength")
+		.defineInRange("pullAwayBurstLength", 1.0, 0.1, 10.0);
+
+	public static final ModConfigSpec.DoubleValue PULL_AWAY_CUTOFF = BUILDER
+		.comment("Fraction of the train's top speed at which the pull-away bursts stop. They only start again",
+			"after the train has come to a standstill.")
+		.translation("moresteam.configuration.pullAwayCutoff")
+		.defineInRange("pullAwayCutoff", 0.2, 0.0, 1.0);
+
+	public static final ModConfigSpec.IntValue SOUND_RANGE = BUILDER
+		.comment("How far away, in blocks, the cylinder bursts can be heard. They fade out evenly up to this",
+			"distance. Minecraft's own sounds use 16.")
+		.translation("moresteam.configuration.soundRange")
+		.defineInRange("soundRange", 32, 16, 256);
+
 	public static final ModConfigSpec.DoubleValue STEAM_AXLE_BASE = BUILDER
 		.comment("How much more steam a bogey lets off for every axle beyond two: amount = base ^ (axles - 2).",
 			"1.0 gives every bogey the same amount; 2.0 doubles it with every axle.",
@@ -67,6 +100,18 @@ public final class MoreSteamConfig {
 	/** Length of an idle burst in ticks. */
 	public static int idleBurstTicks() {
 		return Math.max(1, (int) Math.round(20 * IDLE_BURST_LENGTH.get()));
+	}
+
+	/** A fresh random wait in ticks before the next pull-away burst. */
+	public static int pullAwayWaitTicks(net.minecraft.util.RandomSource random) {
+		double min = PULL_AWAY_INTERVAL_MIN.get();
+		double max = Math.max(min, PULL_AWAY_INTERVAL_MAX.get());
+		return (int) Math.round(20 * (min + random.nextDouble() * (max - min)));
+	}
+
+	/** Length of a pull-away burst in ticks. */
+	public static int pullAwayBurstTicks() {
+		return Math.max(1, (int) Math.round(20 * PULL_AWAY_BURST_LENGTH.get()));
 	}
 
 	/** Stretches a number of steam ticks by the configured multiplier. */

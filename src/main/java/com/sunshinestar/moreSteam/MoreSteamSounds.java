@@ -22,8 +22,15 @@ public final class MoreSteamSounds {
 	/** The cylinders letting off steam as the train comes to a stop. */
 	public static final DeferredHolder<SoundEvent, SoundEvent> STOP_BURST = register("bogey.stop_burst");
 
+	/** The cylinders releasing pressure as the train pulls away from a standstill. */
+	public static final DeferredHolder<SoundEvent, SoundEvent> DEPARTURE = register("bogey.departure");
+
+	/** A cylinder puffing while the train speeds up. */
+	public static final DeferredHolder<SoundEvent, SoundEvent> PULL_AWAY_BURST = register("bogey.pull_away_burst");
+
 	private MoreSteamSounds() {}
 
+	// The range that matters is set per sound on the client; see BurstSound#resolve.
 	private static DeferredHolder<SoundEvent, SoundEvent> register(String name) {
 		return SOUND_EVENTS.register(name,
 			() -> SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MoreSteam.MOD_ID, name)));

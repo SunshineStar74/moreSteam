@@ -19,13 +19,13 @@ import com.sunshinestar.moreSteam.MoreSteamSounds;
 import com.sunshinestar.moreSteam.Pistons;
 import com.sunshinestar.moreSteam.particle.MoreSteamParticles;
 import com.sunshinestar.moreSteam.particle.SteamBurst;
-import com.sunshinestar.moreSteam.sound.StopBurstSound;
+import com.sunshinestar.moreSteam.sound.BurstSound;
 
 import net.createmod.catnip.math.VecHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.Direction.Axis;
 import net.minecraft.core.particles.ParticleOptions;
-import net.minecraft.sounds.SoundSource;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -96,19 +96,25 @@ public abstract class CarriageParticlesMixin {
 	}
 
 	/**
-	 * Per cylinder (two bogeys, up to two cylinders each): ticks left to wait before the next idle
-	 * burst while positive, ticks left of the running burst while negative. 0 means not started.
+	 * Per cylinder (two bogeys, up to two cylinders each): ticks left to wait before the next idle or
+	 * pull-away burst while positive, ticks left of the running burst while negative. 0 means not
+	 * started.
 	 */
-	@Unique private final int[] moresteam$idleTimers = new int[4];
+	@Unique private final int[] moresteam$burstTimers = new int[4];
 	/** Whether the carriage carries a firebox; looked up once, since a carriage cannot change. */
 	@Unique private Boolean moresteam$hasFirebox;
 	/** Whether the stop sound has been played for the current stop. */
 	@Unique private boolean moresteam$stopSounded;
+	/** Whether the carriage was standing still last tick. */
+	@Unique private boolean moresteam$wasStanding;
+	/** Whether the train left a standstill and has not reached the pull-away cutoff speed yet. */
+	@Unique private boolean moresteam$pullingAway;
 
 	/**
 	 * Adds the bursts of steam that shoot from the cylinders towards the back of the train, on
 	 * carriages with a firebox: a strong one from every cylinder while Create releases its own stop
-	 * steam, and a weaker one from each cylinder every so often while standing.
+	 * steam, a weaker one from each cylinder every so often while standing, and short ones while
+	 * the train pulls away from a standstill until it reaches the cutoff speed.
 	 */
 	@Inject(method = "tick", at = @At("TAIL"))
 	private void moresteam$steamBursts(Carriage.DimensionalCarriageEntity dce, CallbackInfo ci) {
@@ -118,18 +124,41 @@ public abstract class CarriageParticlesMixin {
 		boolean stopping = standing && this.depressurise > 0 && this.depressurise <= MoreSteamConfig.steamTicks()
 			&& moresteam$hasFirebox();
 		boolean idle = standing && this.depressurise == 0 && MoreSteamConfig.IDLE_STEAM.get() && moresteam$hasFirebox();
-		if (!idle)
-			Arrays.fill(this.moresteam$idleTimers, 0);
+
+		// Pull-away bursts only start when leaving a standstill, never when slowing down, and end for
+		// good at the cutoff speed or when the train stands still again.
+		boolean departing = this.moresteam$wasStanding && !standing && MoreSteamConfig.PULL_AWAY_STEAM.get()
+			&& moresteam$hasFirebox();
+		this.moresteam$wasStanding = standing;
+		if (departing) {
+			this.moresteam$pullingAway = true;
+			// Every cylinder blows as the train sets off.
+			Arrays.fill(this.moresteam$burstTimers, -MoreSteamConfig.pullAwayBurstTicks());
+		}
+		double cutoff = this.entity.getCarriage().train.maxSpeed() * MoreSteamConfig.PULL_AWAY_CUTOFF.get();
+		if (this.moresteam$pullingAway && (standing || this.prevMotion >= cutoff)) {
+			this.moresteam$pullingAway = false;
+			departing = false;
+		}
+		boolean pullingAway = this.moresteam$pullingAway;
+
+		if (!idle && !pullingAway)
+			Arrays.fill(this.moresteam$burstTimers, 0);
 		if (!stopping)
 			this.moresteam$stopSounded = false;
-		if (!stopping && !idle)
+		if (!stopping && !idle && !pullingAway)
 			return;
 		boolean playStopSound = stopping && !this.moresteam$stopSounded;
 		this.moresteam$stopSounded = stopping;
+		int burstTicks = idle ? MoreSteamConfig.idleBurstTicks() : MoreSteamConfig.pullAwayBurstTicks();
 
 		Level level = this.entity.level();
 		RandomSource random = level.random;
 		Vec3 trainBack = moresteam$trainBack();
+		// Steam leaving a moving train keeps some of its speed, as Create's own steam does.
+		Vec3 carry = pullingAway
+			? this.entity.position().subtract(this.entity.getPrevPositionVec()).scale(0.75)
+			: Vec3.ZERO;
 
 		List<CarriageBogey> bogeys = new ArrayList<>(2);
 		this.entity.getCarriage().bogeys.forEach(bogeys::add);
@@ -147,60 +176,68 @@ public abstract class CarriageParticlesMixin {
 			float scale = BogeyTraits.steamScale(bogey);
 
 			// Only cylinders let off steam; both sides of a cylinder blow together. While stopping
-			// every cylinder blows at once; while idle each one keeps its own clock.
+			// every cylinder blows at once; otherwise each one keeps its own clock.
 			List<Pistons.Piston> pistons = Pistons.of(bogey);
 			for (int p = 0; p < pistons.size() && p < 2; p++) {
-				int before = this.moresteam$idleTimers[b * 2 + p];
-				if (idle && !moresteam$tickIdleTimer(b * 2 + p, random))
+				int index = b * 2 + p;
+				int before = this.moresteam$burstTimers[index];
+				if (!stopping && !moresteam$tickBurstTimer(index, idle, burstTicks, random))
 					continue;
 				Pistons.Piston piston = pistons.get(p);
 
 				// One sound per cylinder, as its burst begins.
-				boolean idleBurstStarts = idle && before == -MoreSteamConfig.idleBurstTicks();
-				if (playStopSound || idleBurstStarts) {
+				boolean burstStarts = !stopping && before == -burstTicks;
+				if (playStopSound || burstStarts) {
 					Vec3 middle = moresteam$bogeyToWorld(bogey, piston.offset(1).multiply(0, 1, 1));
 					float volume = piston.small() ? 0.6f : 1f;
 					float pitch = (piston.small() ? 1.15f : 1f) * (0.9f + random.nextFloat() * 0.2f);
-					if (stopping)
-						// Quietens down once the stop steam (depressurise ticks left) has ended.
-						Minecraft.getInstance().getSoundManager().play(new StopBurstSound(MoreSteamSounds.STOP_BURST.get(),
-							middle.x, middle.y, middle.z, volume, pitch, this.depressurise, random));
-					else
-						level.playLocalSound(middle.x, middle.y, middle.z, MoreSteamSounds.IDLE_BURST.get(),
-							SoundSource.NEUTRAL, volume, pitch, false);
+					SoundEvent sound = stopping ? MoreSteamSounds.STOP_BURST.get()
+						: idle ? MoreSteamSounds.IDLE_BURST.get()
+						: departing ? MoreSteamSounds.DEPARTURE.get()
+						: MoreSteamSounds.PULL_AWAY_BURST.get();
+					// The stop sound quietens down once the stop steam (depressurise ticks left) has ended.
+					int loudTicks = stopping ? this.depressurise : -1;
+					Minecraft.getInstance().getSoundManager().play(
+						new BurstSound(sound, this.entity, middle, volume, pitch, loudTicks, random));
 				}
 
 				for (int side = -1; side <= 1; side += 2) {
 					Vec3 pos = moresteam$bogeyToWorld(bogey, piston.offset(side));
 					Vec3 out = moresteam$bogeyRotate(bogey, new Vec3(side, 0, 0));
 					if (stopping && piston.small())
-						SteamBurst.emit(level, random, pos, back, out, Vec3.ZERO, 2, 0.4, null, scale * 0.5f);
+						SteamBurst.emit(level, random, pos, back, out, carry, 2, 0.4, null, scale * 0.5f);
 					else if (stopping)
-						SteamBurst.emit(level, random, pos, back, out, Vec3.ZERO, 2, 0.52, MoreSteamParticles.BOGEY_STEAM.get(), scale);
+						SteamBurst.emit(level, random, pos, back, out, carry, 2, 0.52, MoreSteamParticles.BOGEY_STEAM.get(), scale);
 					else if (piston.small())
-						SteamBurst.emit(level, random, pos, back, out, Vec3.ZERO, 1, 0.2, null, scale * 0.5f);
+						SteamBurst.emit(level, random, pos, back, out, carry, 1, 0.2, null, scale * 0.5f);
 					else
-						SteamBurst.emit(level, random, pos, back, out, Vec3.ZERO, 1, 0.26, MoreSteamParticles.BOGEY_IDLE_STEAM.get(), scale);
+						SteamBurst.emit(level, random, pos, back, out, carry, 1, 0.26, MoreSteamParticles.BOGEY_IDLE_STEAM.get(), scale);
 				}
 			}
 		}
 	}
 
-	/** Advances one cylinder's idle clock by a tick and says whether it is blowing steam this tick. */
+	/**
+	 * Advances one cylinder's idle or pull-away clock by a tick and says whether it is blowing steam
+	 * this tick.
+	 */
 	@Unique
-	private boolean moresteam$tickIdleTimer(int index, RandomSource random) {
-		int timer = this.moresteam$idleTimers[index];
+	private boolean moresteam$tickBurstTimer(int index, boolean idle, int burstTicks, RandomSource random) {
+		int timer = this.moresteam$burstTimers[index];
+		int wait = timer == 0 || timer == 1 || timer == -1
+			? (idle ? MoreSteamConfig.idleWaitTicks(random) : MoreSteamConfig.pullAwayWaitTicks(random))
+			: 0;
 		if (timer == 0) {
 			// Just stood still: wait first.
-			this.moresteam$idleTimers[index] = MoreSteamConfig.idleWaitTicks(random);
+			this.moresteam$burstTimers[index] = wait;
 			return false;
 		}
 		if (timer > 0) {
-			this.moresteam$idleTimers[index] = timer == 1 ? -MoreSteamConfig.idleBurstTicks() : timer - 1;
+			this.moresteam$burstTimers[index] = timer == 1 ? -burstTicks : timer - 1;
 			return false;
 		}
 		// Bursting; when the burst is over, wait again.
-		this.moresteam$idleTimers[index] = timer == -1 ? MoreSteamConfig.idleWaitTicks(random) : timer + 1;
+		this.moresteam$burstTimers[index] = timer == -1 ? wait : timer + 1;
 		return true;
 	}
 
