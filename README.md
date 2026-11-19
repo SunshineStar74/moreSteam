@@ -66,6 +66,7 @@ New work happens on short-lived branches off `main` and is merged back through a
 
 ## Credits
 - **Sounds** are from [Pixabay](https://pixabay.com), under the [Pixabay Content License](https://pixabay.com/service/license-summary/). `1_sec_no_loop_burst` is by DRAGON STUDIO; all the others are by freesound_community.
+- **Firebox texture:** the furnace door is by SunshineStar74. The train casing around it is Create's own texture, loaded from Create (not copied into this mod).
 
 ## Building
 On the `main` branch. Needs a JDK 21; Gradle finds an installed one, or downloads it.
