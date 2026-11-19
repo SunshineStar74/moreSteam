@@ -167,7 +167,7 @@ public abstract class CarriageParticlesMixin {
 			// A barely-moved train (where Create also skips its stop sound) gives no burst.
 			if (createSteam && !this.moresteam$stopStarted) {
 				this.moresteam$stopStarted = true;
-				if (moresteam$hasFirebox() && this.moresteam$pressure > 0.1f) {
+				if (MoreSteamConfig.STOP_STEAM.get() && moresteam$hasFirebox() && this.moresteam$pressure > 0.1f) {
 					this.moresteam$stopTotal = MoreSteamConfig.stopBurstTicks(MoreSteamConfig.curvePressure(this.moresteam$pressure));
 					this.moresteam$stopTicks = this.moresteam$stopTotal;
 				}

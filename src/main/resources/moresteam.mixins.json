@@ -5,7 +5,9 @@
   "compatibilityLevel": "JAVA_21",
   "client": [
     "CarriageBogeyAccessor",
-    "CarriageParticlesMixin"
+    "CarriageParticlesMixin",
+    "LabeledEntryAccessor",
+    "SubMenuConfigScreenMixin"
   ],
   "injectors": {
     "defaultRequire": 1
