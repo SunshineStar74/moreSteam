@@ -15,13 +15,17 @@ import com.simibubi.create.content.trains.entity.CarriageParticles;
 import com.sunshinestar.moreSteam.BogeyTraits;
 import com.sunshinestar.moreSteam.MoreSteamBlocks;
 import com.sunshinestar.moreSteam.MoreSteamConfig;
+import com.sunshinestar.moreSteam.MoreSteamSounds;
 import com.sunshinestar.moreSteam.Pistons;
 import com.sunshinestar.moreSteam.particle.MoreSteamParticles;
 import com.sunshinestar.moreSteam.particle.SteamBurst;
+import com.sunshinestar.moreSteam.sound.StopBurstSound;
 
 import net.createmod.catnip.math.VecHelper;
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.Direction.Axis;
 import net.minecraft.core.particles.ParticleOptions;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -98,6 +102,8 @@ public abstract class CarriageParticlesMixin {
 	@Unique private final int[] moresteam$idleTimers = new int[4];
 	/** Whether the carriage carries a firebox; looked up once, since a carriage cannot change. */
 	@Unique private Boolean moresteam$hasFirebox;
+	/** Whether the stop sound has been played for the current stop. */
+	@Unique private boolean moresteam$stopSounded;
 
 	/**
 	 * Adds the bursts of steam that shoot from the cylinders towards the back of the train, on
@@ -114,8 +120,12 @@ public abstract class CarriageParticlesMixin {
 		boolean idle = standing && this.depressurise == 0 && MoreSteamConfig.IDLE_STEAM.get() && moresteam$hasFirebox();
 		if (!idle)
 			Arrays.fill(this.moresteam$idleTimers, 0);
+		if (!stopping)
+			this.moresteam$stopSounded = false;
 		if (!stopping && !idle)
 			return;
+		boolean playStopSound = stopping && !this.moresteam$stopSounded;
+		this.moresteam$stopSounded = stopping;
 
 		Level level = this.entity.level();
 		RandomSource random = level.random;
@@ -140,9 +150,26 @@ public abstract class CarriageParticlesMixin {
 			// every cylinder blows at once; while idle each one keeps its own clock.
 			List<Pistons.Piston> pistons = Pistons.of(bogey);
 			for (int p = 0; p < pistons.size() && p < 2; p++) {
+				int before = this.moresteam$idleTimers[b * 2 + p];
 				if (idle && !moresteam$tickIdleTimer(b * 2 + p, random))
 					continue;
 				Pistons.Piston piston = pistons.get(p);
+
+				// One sound per cylinder, as its burst begins.
+				boolean idleBurstStarts = idle && before == -MoreSteamConfig.idleBurstTicks();
+				if (playStopSound || idleBurstStarts) {
+					Vec3 middle = moresteam$bogeyToWorld(bogey, piston.offset(1).multiply(0, 1, 1));
+					float volume = piston.small() ? 0.6f : 1f;
+					float pitch = (piston.small() ? 1.15f : 1f) * (0.9f + random.nextFloat() * 0.2f);
+					if (stopping)
+						// Quietens down once the stop steam (depressurise ticks left) has ended.
+						Minecraft.getInstance().getSoundManager().play(new StopBurstSound(MoreSteamSounds.STOP_BURST.get(),
+							middle.x, middle.y, middle.z, volume, pitch, this.depressurise, random));
+					else
+						level.playLocalSound(middle.x, middle.y, middle.z, MoreSteamSounds.IDLE_BURST.get(),
+							SoundSource.NEUTRAL, volume, pitch, false);
+				}
+
 				for (int side = -1; side <= 1; side += 2) {
 					Vec3 pos = moresteam$bogeyToWorld(bogey, piston.offset(side));
 					Vec3 out = moresteam$bogeyRotate(bogey, new Vec3(side, 0, 0));

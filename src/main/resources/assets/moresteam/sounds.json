@@ -1,0 +1,17 @@
+{
+  "bogey.idle_burst": {
+    "subtitle": "subtitles.moresteam.bogey.idle_burst",
+    "sounds": [
+      "moresteam:steam/3_sec_burst",
+      "moresteam:steam/5_sec_burst2",
+      "moresteam:steam/5_sec_burst3",
+      "moresteam:steam/5_sec_burst4"
+    ]
+  },
+  "bogey.stop_burst": {
+    "subtitle": "subtitles.moresteam.bogey.stop_burst",
+    "sounds": [
+      "moresteam:steam/10_sec_burst"
+    ]
+  }
+}

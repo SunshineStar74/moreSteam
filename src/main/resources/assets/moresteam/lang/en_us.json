@@ -14,5 +14,7 @@
   "moresteam.configuration.idleBurstLength.tooltip": "How long each burst of a standing train lasts.",
   "moresteam.configuration.steamAxleBase": "Steam per axle (exponent base)",
   "moresteam.configuration.steamAxleBase.tooltip": "Steam = base ^ (axles - 2). WARNING: at 3.0 a six-axle bogey makes 81x the steam and can wreck the frame rate.",
-  "block.moresteam.firebox": "Firebox"
+  "block.moresteam.firebox": "Firebox",
+  "subtitles.moresteam.bogey.idle_burst": "Cylinder hisses",
+  "subtitles.moresteam.bogey.stop_burst": "Cylinders blow off steam"
 }
