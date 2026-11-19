@@ -64,6 +64,9 @@ Settings are in `config/moresteam-client.toml`, or in-game under Mods > More Ste
 
 New work happens on short-lived branches off `main` and is merged back through a pull request once it has been tested.
 
+## Credits
+- **Sounds** are from [Pixabay](https://pixabay.com), under the [Pixabay Content License](https://pixabay.com/service/license-summary/). `1_sec_no_loop_burst` is by DRAGON STUDIO; all the others are by freesound_community.
+
 ## Building
 On the `main` branch. Needs a JDK 21; Gradle finds an installed one, or downloads it.
 
